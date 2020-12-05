@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+	<script src="path where Entrez-CrossRef-API-Implementation file is"></script>
+
+	<script>
+
+		/**
+		* I encountered problems that I never had before, so I 
+		*learned a bit with this assessment, thanks!
+		* 
+		**/
+
+		/**
+		* Returns an array containing articles titles and authors
+		* matching a query using NCBI Entrez Utilities API
+		*
+		**/
+		function getNCBITitleAuthors(){
+			var options = new Object();
+			var articlesTitleAuthors = new Array();
+			var entrezUtilities = new EntrezUtilities();
+
+			//data for testing
+			options.data = {
+				term: "asthma"
+			};
+
+			entrezUtilities.searchRecordsByTerm(options)
+			.then((data)=>{
+				var idList = $(data).find("IdList > Id"); //gets list of xml formatted Ids
+				var ids = new Array();
+
+				/**
+				* Fetch Ids from IdList
+				* and push them into ids
+				**/
+				$.each(idList, function(index,val){
+					ids.push($(val).html());
+				});
+
+				options.data.ids = ids.toString();	//convert ids to string format
+
+				/**
+				* Since we have to use Ids to fetch article metadata,
+				* lets use searchRecordsByIds function
+				**/
+
+				entrezUtilities.searchRecordsByIDs(options)
+				.then((data)=>{
+					//articlesList contains all records found by Ids in xml format.
+					var articlesList = $(data).find("PubmedArticleSet > PubmedArticle").find("MedlineCitation > Article");
+					var articles = new Array(); 
+
+					/**
+					*Iterate through each article in articlesList and extract 
+					*title and authors and push them in
+					* articles
+					**/
+					$.each(articlesList, function(index, val){
+						var article = new Object();
+						article.title = $(val).find("ArticleTitle").html();
+
+						var authorList = $(val).find("AuthorList > Author");
+
+						article.authors = new Array();
+
+						$.each(authorList, function(index,val){
+							var author = new Object();
+							author.lastname = $(val).find("LastName").html();
+							author.firstname = $(val).find("ForeName").html();
+							
+							article.authors.push(author);
+						});
+						articles.push(article);
+					});
+
+					articlesTitleAuthors = articles;
+					//We could convert to JSON using stringify
+
+				}).catch((error)=>{
+					console.log(error);
+				})
+
+			}).catch((error)=>{
+				console.log(error);
+			});
+
+			return articlesTitleAuthors;
+		}
+
+
+		/**Returns array containing article title and authors
+		* Sorry!! I tried to finish this on time.
+		*
+		**/
+		function getCrossrefTitleAuthors(){}
+
+	</script>
+
+
+</html>
